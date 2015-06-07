@@ -4,7 +4,8 @@ Rails.application.routes.draw do
   devise_for :users
   root 'static_pages#index'
 
-  scope '/rails_api' do
+  namespace :rails_api do
+    mount_devise_token_auth_for 'User', at: 'auth'
     get 'posts', to: 'rails_posts#index'
     get 'posts/:id', to: 'rails_posts#show'
   end
