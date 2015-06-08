@@ -1,0 +1,13 @@
+{
+  "name": "grape-json-api",
+  "dependencies" : {
+    "browserify": "~> 6.3",
+    "browserify-incremental": "^1.4.0",
+    "j-toker": "^0.0.6",
+    "jquery-colorbox": "1.6.1"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">= 0.10"
+  }
+}

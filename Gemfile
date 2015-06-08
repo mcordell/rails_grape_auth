@@ -27,6 +27,7 @@ gem 'pg'
 gem 'devise'
 gem 'devise_token_auth'
 gem 'omniauth'
+gem 'browserify-rails', github: 'browserify-rails/browserify-rails'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
