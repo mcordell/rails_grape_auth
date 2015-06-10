@@ -18,11 +18,10 @@
 global.jQuery = require('jquery');
 (function () {
   'use strict';
-
       var $     = require('jquery'),
       colorbox  = require('jquery-colorbox'),
       auth      = require('j-toker'),
-      apiUrl    = 'http://grape.dev/rails_api/',
+      apiUrl,
       postsPath = 'posts',
       configureAuth = function () {
         auth.configure({
@@ -47,14 +46,18 @@ global.jQuery = require('jquery');
             .then(isLoggedInCallback)
             .fail(signInProcess(isLoggedInCallback));
       },
-      getPosts = function (callback) {
+      getPosts = function () {
         var url = apiUrl + postsPath;
-        $.getJSON(url).success(callback);
+
+        var displayResp = function (data) {
+          $('#response').html(JSON.stringify(data));
+        };
+        $.getJSON(url).success(displayResp).fail(displayResp);
       },
-      bindGetPosts = function (callback) {
-        $('button#get-posts').click( function (event) {
+      bindGetPosts = function () {
+        $('a#get-posts').click( function (event) {
           event.preventDefault();
-          checkLoggedIn(getPosts(callback));
+          getPosts();
         });
       },
       bindLoginSubmit = function (successCallback) {
@@ -79,11 +82,40 @@ global.jQuery = require('jquery');
           event.preventDefault();
           displaySignedInModal(callback);
         });
+      },
+      bindLogout = function (callback) {
+        $('button#logout').click( function (event) {
+          event.preventDefault();
+          auth.signOut().then(function () {
+            showLoggedOut();
+          }).fail(function (data) { alert(data); });
+        });
+      },
+      showLoggedIn = function (email) {
+        $('div#logged-in').show();
+        $('div#logged-out').hide();
+        var message = 'Hello ' + email;
+        $('#logged-in .message').html(message);
+      },
+      showLoggedOut = function () {
+        $('div#logged-in').hide();
+        $('div#logged-out').show();
+      },
+      setLoggedInBox = function () {
+        auth.validateToken()
+          .then(function (user) {
+            showLoggedIn(user.email);
+          }).fail(function () {
+            showLoggedOut();
+          });
       };
 
   $(document).ready(function () {
+    apiUrl = $('span#api-url').text();
     configureAuth();
-    bindLogin(function (user) { alert('Welcome ' + user.data.email + '!'); });
+    setLoggedInBox();
+    bindLogin(function (user) { showLoggedIn(user.data.email); });
+    bindLogout();
     bindGetPosts();
   });
 }());

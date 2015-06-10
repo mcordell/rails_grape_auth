@@ -3,6 +3,7 @@ Rails.application.routes.draw do
 
   devise_for :users
   root 'static_pages#index'
+  get '/test_rail_api', to: 'static_pages#rails_api', as: 'test_rails_api'
 
   namespace :rails_api do
     mount_devise_token_auth_for 'User', at: 'auth'
