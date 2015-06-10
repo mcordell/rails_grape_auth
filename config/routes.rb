@@ -10,6 +10,8 @@ Rails.application.routes.draw do
     get 'posts', to: 'rails_posts#index'
     get 'posts/:id', to: 'rails_posts#show'
   end
+
+  mount GrapeApi::Posts => '/grape_api/'
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
