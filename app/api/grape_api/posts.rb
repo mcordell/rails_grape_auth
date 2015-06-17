@@ -4,8 +4,6 @@ class GrapeDeviseTokenAuth
   UID_KEY = 'HTTP_UID'
   CLIENT_KEY = 'HTTP_CLIENT'
 
-  attr_reader :uid, :client_id, :token, :expiry, :user
-
   def initialize(app, args)
     @app = app
     @args = args
@@ -13,22 +11,64 @@ class GrapeDeviseTokenAuth
 
   def call(env)
     setup(env)
-    return unauthorized unless authenticated_by_token?
+    user = authenticate_from_token
+    return unauthorized unless user
+    sign_in_user(user)
     responses_with_auth_headers(*@app.call(env))
   end
 
   private
 
+  attr_reader :uid, :client_id, :token, :expiry, :user, :resource_class, :resource, :warden, :batch_request_buffer_throttle, :request_start
+
   def setup(env)
-    @uid         = env[UID_KEY]
-    @client_id   = env[CLIENT_KEY]
-    @token       = env[ACCESS_TOKEN_KEY]
-    @expiry      = env[EXPIRY_KEY]
+    @request_start = Time.now
+    @uid           = env[UID_KEY]
+    @client_id     = env[CLIENT_KEY] || 'default'
+    @token         = env[ACCESS_TOKEN_KEY]
+    @expiry        = env[EXPIRY_KEY]
+    @warden        = env['warden']
   end
 
-  def authenticated_by_token?
-    @user = User.find_by_uid(uid)
-    user && user.valid_token?(token, client_id)
+  def sign_in_user(user)
+    # user already logged in from devise:
+    return resource if resource
+    @resource = user
+  end
+
+  def resource_from_existing_devise_user
+    warden_user =  warden.user(resource_class.to_s.underscore.to_sym)
+    return unless warden_user && warden_user.tokens[client_id].nil?
+    @resource = warden_user
+    @resource.create_new_auth_token
+  end
+
+  def authenticate_from_token(mapping = nil)
+    resource_class_from_mapping(mapping)
+    return nil unless resource_class
+
+    resource_from_existing_devise_user
+    return resource if correct_resource_type_logged_in?
+
+    return nil unless token_request_valid?
+
+    user = resource_class.find_by_uid(uid)
+
+    return nil unless user && user.valid_token?(token, client_id)
+
+    user
+  end
+
+  def token_request_valid?
+    token && uid
+  end
+
+  def correct_resource_type_logged_in?
+    resource && resource.class == resource_class
+  end
+
+  def resource_class_from_mapping(_mapping)
+    @resource_class = User
   end
 
   def valid?
@@ -52,9 +92,23 @@ class GrapeDeviseTokenAuth
   end
 
   def auth_headers
-    user.with_lock do
-      return user.create_new_auth_token(client_id)
+    return {} unless resource && resource.valid? && client_id
+    auth_headers_from_resource
+  end
+
+  def auth_headers_from_resource
+    auth_headers = {}
+    resource.with_lock do
+      if !DeviseTokenAuth.change_headers_on_each_request
+        auth_headers = resource.extend_batch_buffer(token, client_id)
+      elsif batch_request?
+        resource.extend_batch_buffer(token, client_id)
+        # don't set any headers in a batch request
+      else
+        auth_headers = resource.create_new_auth_token(client_id)
+      end
     end
+    auth_headers
   end
 
   def unauthorized
@@ -63,6 +117,18 @@ class GrapeDeviseTokenAuth
      },
      []
     ]
+  end
+
+  def batch_request?
+    @batch_request ||= resource.tokens[client_id] &&
+                       resource.tokens[client_id]['updated_at'] &&
+                       within_batch_request_window?
+  end
+
+  def within_batch_request_window?
+    end_of_window = Time.parse(resource.tokens[client_id]['updated_at']) +
+                    DeviseTokenAuth.batch_request_buffer_throttle
+    request_start < end_of_window
   end
 end
 
