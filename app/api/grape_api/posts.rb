@@ -4,9 +4,9 @@ class GrapeDeviseTokenAuth
   UID_KEY = 'HTTP_UID'
   CLIENT_KEY = 'HTTP_CLIENT'
 
-  def initialize(app, args)
+  def initialize(app, resource_name)
     @app = app
-    @args = args
+    resource_class_from_mapping(resource_name)
   end
 
   def call(env)
@@ -67,8 +67,9 @@ class GrapeDeviseTokenAuth
     resource && resource.class == resource_class
   end
 
-  def resource_class_from_mapping(_mapping)
-    @resource_class = User
+  def resource_class_from_mapping(m)
+    mapping = m ? Devise.mappings[m] : Devise.mappings.values.first
+    @resource_class = mapping.to
   end
 
   def valid?
@@ -132,11 +133,11 @@ class GrapeDeviseTokenAuth
   end
 end
 
-Grape::Middleware::Auth::Strategies.add(:my_auth, GrapeDeviseTokenAuth, ->(options) { [options[:realm]] } )
+Grape::Middleware::Auth::Strategies.add(:grape_devise_token_auth, GrapeDeviseTokenAuth, ->(options) { [options[:resource_class]] } )
 
 module GrapeApi
   class Posts < Grape::API
-    auth :my_auth, { realm: 'Test Api'}
+    auth :grape_devise_token_auth, { resource_class: :user }
 
     format :json
 
