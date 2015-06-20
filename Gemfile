@@ -29,6 +29,7 @@ gem 'devise_token_auth', github: 'lynndylanhurley/devise_token_auth'
 gem 'omniauth'
 gem 'browserify-rails', github: 'browserify-rails/browserify-rails'
 gem 'grape'
+gem 'grape_devise_token_auth'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
