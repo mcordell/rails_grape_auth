@@ -1,28 +1,21 @@
-== README
+This is an example repo that demonstrates setting up rails app that integrates
+the following:
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
-
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+- [devise][3]
+- [devise_token_auth][1]
+- [jToker][5]
+- [grape_devise_token_auth][4]
+- [grape][2]
 
 
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+I primarily use it to test my gem [grape_devise_token_auth][4].
+
+
+[1]: https://github.com/lynndylanhurley/devise_token_auth
+[2]: https://github.com/intridea/grape
+[3]: https://github.com/plataformatec/devise
+[4]: https://github.com/mcordell/grape_devise_token_auth
+[5]: https://github.com/lynndylanhurley/j-toker
+
+
+
