@@ -84,4 +84,11 @@ RSpec.configure do |config|
   # as the one that triggered the failure.
   Kernel.srand config.seed
 =end
+
+  def age_token(user, client_id)
+    age = Time.now -
+          (DeviseTokenAuth.batch_request_buffer_throttle + 10.seconds)
+    user.tokens[client_id]['updated_at'] = age
+    user.save!
+  end
 end

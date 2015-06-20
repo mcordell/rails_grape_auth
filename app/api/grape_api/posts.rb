@@ -34,6 +34,13 @@ class GrapeDeviseTokenAuth
     # user already logged in from devise:
     return resource if resource
     @resource = user
+    set_user_in_warden(:user, user)
+  end
+
+  #extracted and simplified from Devise
+  def set_user_in_warden(scope, resource)
+    scope    = Devise::Mapping.find_scope!(scope)
+    warden.session_serializer.store(resource, scope)
   end
 
   def resource_from_existing_devise_user
@@ -135,14 +142,43 @@ end
 
 Grape::Middleware::Auth::Strategies.add(:grape_devise_token_auth, GrapeDeviseTokenAuth, ->(options) { [options[:resource_class]] } )
 
+module AuthHelpers
+  def self.included(_base)
+    Devise.mappings.keys.each do |mapping|
+      define_method("current_#{mapping}") do
+        warden.session_serializer.fetch(:user)
+      end
+    end
+  end
+
+  def warden
+    @warden ||= env['warden']
+  end
+
+  def authenticated?(scope = :user)
+    user_type = "current_#{scope}"
+    return false unless respond_to?(user_type)
+    !!send(user_type)
+  end
+end
+
 module GrapeApi
   class Posts < Grape::API
-    auth :grape_devise_token_auth, { resource_class: :user }
+    auth :grape_devise_token_auth, resource_class: :user
 
     format :json
 
+    helpers AuthHelpers
+
     get '/' do
       present Post.all
+    end
+
+    get '/helper_test' do
+      {
+        current_user_uid: current_user.uid,
+        authenticated?: authenticated?
+      }
     end
   end
 end

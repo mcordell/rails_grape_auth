@@ -177,13 +177,4 @@ RSpec.describe 'Getting a protected route on the grape API', type: :request do
       expect(@resp_uid).not_to be_nil
     end
   end
-
-  private
-
-  def age_token(user, client_id)
-    age = Time.now -
-          (DeviseTokenAuth.batch_request_buffer_throttle + 10.seconds)
-    user.tokens[client_id]['updated_at'] = age
-    user.save!
-  end
 end
