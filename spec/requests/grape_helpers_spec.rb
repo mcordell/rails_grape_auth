@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe 'Getting a protected route' do
+RSpec.describe 'Getting a route' do
   let(:protected_route) { '/grape_api' }
   let(:resource_class) { User }
   let(:resource) do
@@ -19,7 +19,7 @@ RSpec.describe 'Getting a protected route' do
   let(:client_id)    { auth_headers['client'] }
   let(:expiry)       { auth_headers['expiry'] }
 
-  context 'that demonstrates the helper methods' do
+  context 'that demonstrates the helper methods when authenticated' do
     before do
       age_token(resource, client_id)
 
@@ -33,6 +33,21 @@ RSpec.describe 'Getting a protected route' do
 
     it 'authenticated? returns true when the user is authenticated' do
       expect(@helper_response['authenticated?']).to eq true
+    end
+  end
+
+  context 'that demonstractes the helper methods when not authenticated' do
+    before do
+      get '/grape_api/unauthenticated_helper_test', {}, {}
+      @helper_response = JSON.parse(response.body)
+    end
+
+    it 'current user returns the signed in user' do
+      expect(@helper_response['current_user']).to be_nil
+    end
+
+    it 'authenticated? returns true when the user is authenticated' do
+      expect(@helper_response['authenticated?']).to eq false
     end
   end
 end

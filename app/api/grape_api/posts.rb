@@ -1,4 +1,6 @@
-GrapeDeviseTokenAuth.setup!(true)
+GrapeDeviseTokenAuth.setup! do |config|
+  config.authenticate_all = false
+end
 
 module GrapeApi
   class Posts < Grape::API
@@ -9,12 +11,21 @@ module GrapeApi
     helpers GrapeDeviseTokenAuth::AuthHelpers
 
     get '/' do
+      authenticate_user!
       present Post.all
     end
 
     get '/helper_test' do
+      authenticate_user!
       {
         current_user_uid: current_user.uid,
+        authenticated?: authenticated?
+      }
+    end
+
+    get '/unauthenticated_helper_test' do
+      {
+        current_user: current_user,
         authenticated?: authenticated?
       }
     end
